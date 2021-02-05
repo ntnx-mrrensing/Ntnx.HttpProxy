@@ -50,6 +50,10 @@ Please be aware that all code samples provided here are unofficial in nature, ar
         [pscredential]
         $ProxyCredential,
 
+        [Parameter(Mandatory=$false)]
+        [switch]
+        $PcFanOut,
+
         # Prism UI Credential to invoke call
         [Parameter(Mandatory=$true)]
         [PSCredential]
@@ -85,7 +89,10 @@ Please be aware that all code samples provided here are unofficial in nature, ar
             $body = $body | ConvertTo-Json -Depth 20
             $args.add("Body",$body)
         }
-        
+        if($PcFanOut){
+            $args.Uri = $args.Uri + "?proxyClusterUuid=all_clusters"
+        }
+
         Write-Debug -Message $body
 
         $response = Invoke-WebRequest @args
