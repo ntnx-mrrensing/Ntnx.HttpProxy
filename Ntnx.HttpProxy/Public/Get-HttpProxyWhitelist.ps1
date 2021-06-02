@@ -42,7 +42,7 @@ Please be aware that all code samples provided here are unofficial in nature, ar
         $headers = Initialize-BasicAuthHeader -credential $Credential
         $headers.Add("content-type", "application/json")
 
-        $body = [Hashtable]::new()
+        #$body = [Hashtable]::new()
         #$body.add("BodyParam1",$BodyParam1)
 
         $args = @{
@@ -57,11 +57,7 @@ Please be aware that all code samples provided here are unofficial in nature, ar
         $response = Invoke-WebRequest @args
 
         if($response.StatusCode -in 200..204){
-            if($ShowMetadata){
                 $response.Content | ConvertFrom-Json    
-            }
-            else{
-                ($response.Content | ConvertFrom-Json).Entities
             }
         }   
         else{

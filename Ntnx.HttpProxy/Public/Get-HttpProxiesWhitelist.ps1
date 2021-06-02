@@ -19,18 +19,10 @@ Please be aware that all code samples provided here are unofficial in nature, ar
         [string]
         $ComputerName,
 
-        # Port (Default is 9440)
-        [Parameter(Mandatory=$false)]
-        [int16]
-        $Port = 9440,
-
-        [Parameter(Mandatory=$false)]
+        # Skip SSL cert check
+        [Parameter()]
         [switch]
-        $ShowMetadata,
-
-        # Body Parameter1
-        #[Parameter()]
-        #$BodyParam1,
+        $SkipCertificateCheck,
 
         # Prism UI Credential to invoke call
         [Parameter(Mandatory=$true)]
@@ -39,30 +31,44 @@ Please be aware that all code samples provided here are unofficial in nature, ar
     )
 
     process {
-        $headers = Initialize-BasicAuthHeader -credential $Credential
+        #$headers = Initialize-BasicAuthHeader -credential $Credential
         $headers.Add("content-type", "application/json")
 
-        $body = [Hashtable]::new()
+        #$body = [Hashtable]::new()
         #$body.add("BodyParam1",$BodyParam1)
 
-        $args = @{
+        $iwrArgs = @{
             Uri = "https://$($ComputerName):$($Port)/PrismGateway/services/rest/v1/http_proxies/whitelist"
             Method = "GET"
             Headers = $headers
         }
+
+        if ($PSVersionTable.PSVersion.Major -lt 6) {
+            $basicAuth = Initialize-BasicAuthHeader -Credential $Credential
+            $iwrArgs.Add("headers",$basicAuth)
+        }
+        else{
+            $iwrArgs.add("Authentication","Basic")
+            $iwrArgs.add("Credential",$Credential)
+            $iwrArgs.add("SslProtocol","Tls12")
+
+            if ($SkipCertificateCheck) {
+                $iwrArgs.add("SkipCertificateCheck",$true)
+            }
+        }
+
+        if ($SkipCertificateCheck) {
+            $iwrArgs.add("SkipCertificateCheck",$true)
+        }
+
         if($body.count -ge 1){
             $args.add("Body",($body | ConvertTo-Json))
         }
         
-        $response = Invoke-WebRequest @args
+        $response = Invoke-WebRequest @iwrArgs
 
         if($response.StatusCode -eq 200){
-            if($ShowMetadata){
                 $response.Content | ConvertFrom-Json    
-            }
-            else{
-                ($response.Content | ConvertFrom-Json).Entities
-            }
         }   
         else{
             Write-Error -Message "$($response.StatusCode): $($response.StatusDescription)"
